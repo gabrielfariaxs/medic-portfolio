@@ -55,7 +55,8 @@ export default function AdminPage() {
           .upload(filePath, formData.file);
 
         if (uploadError) {
-          throw new Error('Erro ao fazer upload da imagem. O bucket "images" foi criado e está público?');
+          console.error("Supabase Storage Upload Error (Admin):", uploadError);
+          throw new Error('Erro ao fazer upload da imagem: ' + (uploadError.message || JSON.stringify(uploadError)) + ' (O bucket "images" foi criado e está público?)');
         }
 
         const { data: publicUrlData } = supabase.storage

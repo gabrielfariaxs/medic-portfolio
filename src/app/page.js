@@ -107,7 +107,10 @@ export default function Home() {
           .from('images')
           .upload(filePath, formData.file);
 
-        if (uploadError) throw new Error('Erro ao fazer upload da imagem.');
+        if (uploadError) {
+          console.error("Supabase Storage Upload Error (Add):", uploadError);
+          throw new Error('Erro ao fazer upload da imagem: ' + (uploadError.message || JSON.stringify(uploadError)));
+        }
 
         const { data: publicUrlData } = supabase.storage
           .from('images')
@@ -168,7 +171,10 @@ export default function Home() {
           .from('images')
           .upload(filePath, formData.file);
 
-        if (uploadError) throw new Error('Erro ao enviar nova imagem.');
+        if (uploadError) {
+          console.error("Supabase Storage Upload Error (Edit):", uploadError);
+          throw new Error('Erro ao enviar nova imagem: ' + (uploadError.message || JSON.stringify(uploadError)));
+        }
 
         const { data: publicUrlData } = supabase.storage
           .from('images')
