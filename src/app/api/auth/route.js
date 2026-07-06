@@ -5,7 +5,7 @@ export async function POST(request) {
   try {
     const { email, password } = await request.json();
 
-    if (email === 'admin@arthromed.com' && password === process.env.ADMIN_PASSWORD) {
+    if ((email === 'admin@arthromed.com' || email === 'admin@arthromed.com.br') && password === process.env.ADMIN_PASSWORD) {
       // Set an HTTP-only cookie for the session
       const cookieStore = await cookies();
       cookieStore.set({

@@ -54,7 +54,7 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--line)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit' }}
-            placeholder="admin@arthromed.com"
+            placeholder="admin@arthromed.com.br"
             required
           />
         </div>
