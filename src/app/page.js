@@ -408,9 +408,12 @@ export default function Home() {
     return t;
   };
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      alert('Link copiado com sucesso!');
+  const copyLink = (p) => {
+    // Copia o link e os dados básicos se quiser, ou apenas o link do site por enquanto
+    const link = window.location.origin; 
+    const txt = getResumoTexto(p) + '\n\nVeja mais em: ' + link;
+    navigator.clipboard.writeText(txt).then(() => {
+      alert('Resumo e link copiados com sucesso!');
     });
   };
 
@@ -1069,7 +1072,7 @@ export default function Home() {
               </div>
 
               <div className="pf-actions">
-                <button className="btn btn-grad" style={{ flex: 1 }} onClick={copyLink}>
+                <button className="btn btn-grad" style={{ flex: 1 }} onClick={() => copyLink(selectedProduct)}>
                   <span dangerouslySetInnerHTML={{ __html: ICN.copy }}></span> Copiar link
                 </button>
                 <a className="btn btn-ghost" style={{ flex: 1, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} href="https://wa.me/5581989236136" target="_blank" rel="noopener noreferrer">
@@ -1077,9 +1080,6 @@ export default function Home() {
                 </a>
                 <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => downloadProductPDF(selectedProduct)}>
                   Baixar PDF
-                </button>
-                <button className="btn btn-ghost" style={{ padding: '10px' }} onClick={() => shareProduct(selectedProduct)}>
-                  <span dangerouslySetInnerHTML={{ __html: ICN.share }}></span>
                 </button>
               </div>
             </>
