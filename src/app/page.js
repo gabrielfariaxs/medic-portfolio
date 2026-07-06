@@ -52,7 +52,8 @@ export default function Home() {
     tipo: TYPES[0],
     tag: '',
     estados: [],
-    file: null
+    file: null,
+    como: ''
   });
 
   useEffect(() => {
@@ -88,7 +89,8 @@ export default function Home() {
               e: item.especialidade,
               t: item.tipo,
               tag: item.tag || '',
-              img: item.imagem_url
+              img: item.imagem_url,
+              como: item.como || ''
             };
           });
 
@@ -145,7 +147,8 @@ export default function Home() {
       tipo: p.t,
       tag: p.tag || '',
       estados: INITIAL_UF[p.id] || [],
-      file: null
+      file: null,
+      como: p.como || ''
     });
   };
 
@@ -184,7 +187,8 @@ export default function Home() {
         e: formData.especialidade,
         t: formData.tipo,
         tag: formData.tag,
-        img: imageUrl
+        img: imageUrl,
+        como: formData.como
       };
 
       const { error: dbError } = await supabase
@@ -197,7 +201,8 @@ export default function Home() {
           tipo: novoProduto.t,
           tag: novoProduto.tag,
           imagem_url: imageUrl,
-          estados: formData.estados
+          estados: formData.estados,
+          como: formData.como
         }]);
 
       if (dbError) {
@@ -216,7 +221,8 @@ export default function Home() {
         tipo: TYPES[0],
         tag: '',
         estados: [],
-        file: null
+        file: null,
+        como: ''
       });
 
       setTimeout(() => {
@@ -269,7 +275,8 @@ export default function Home() {
           tipo: formData.tipo,
           tag: formData.tag,
           imagem_url: imageUrl,
-          estados: formData.estados
+          estados: formData.estados,
+          como: formData.como
         })
         .eq('id', editingProduct.id);
 
@@ -287,7 +294,8 @@ export default function Home() {
             e: formData.especialidade,
             t: formData.tipo,
             tag: formData.tag,
-            img: imageUrl
+            img: imageUrl,
+            como: formData.como
           };
         }
         return p;
@@ -302,7 +310,8 @@ export default function Home() {
           e: formData.especialidade,
           t: formData.tipo,
           tag: formData.tag,
-          img: imageUrl
+          img: imageUrl,
+          como: formData.como
         });
       }
 
@@ -399,16 +408,29 @@ export default function Home() {
     return t;
   };
 
-  const copyResumo = (p) => {
-    const txt = getResumoTexto(p);
-    navigator.clipboard.writeText(txt).then(() => {
-      alert('Resumo copiado com sucesso!');
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      alert('Link copiado com sucesso!');
     });
   };
 
-  const shareProduct = (p) => {
+  const shareProduct = async (p) => {
     const txt = getResumoTexto(p);
-    window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank', 'noopener');
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: p.n,
+          text: txt,
+          url: window.location.href
+        });
+      } catch (err) {
+        console.error('Erro ao compartilhar:', err);
+      }
+    } else {
+      navigator.clipboard.writeText(txt).then(() => {
+        alert('Resumo copiado com sucesso!');
+      });
+    }
   };
 
   const downloadProductPDF = async (p) => {
@@ -1047,9 +1069,12 @@ export default function Home() {
               </div>
 
               <div className="pf-actions">
-                <button className="btn btn-grad" style={{ flex: 1 }} onClick={() => copyResumo(selectedProduct)}>
-                  <span dangerouslySetInnerHTML={{ __html: ICN.copy }}></span> Copiar resumo
+                <button className="btn btn-grad" style={{ flex: 1 }} onClick={copyLink}>
+                  <span dangerouslySetInnerHTML={{ __html: ICN.copy }}></span> Copiar link
                 </button>
+                <a className="btn btn-ghost" style={{ flex: 1, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} href="https://wa.me/5581989236136" target="_blank" rel="noopener noreferrer">
+                  WhatsApp
+                </a>
                 <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => downloadProductPDF(selectedProduct)}>
                   Baixar PDF
                 </button>
@@ -1107,6 +1132,11 @@ export default function Home() {
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Breve Descrição</label>
                 <input type="text" value={formData.tag} onChange={e => setFormData({...formData, tag: e.target.value})} style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px' }} />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Como solicitar corretamente (opcional)</label>
+                <textarea value={formData.como} onChange={e => setFormData({...formData, como: e.target.value})} rows="3" placeholder="Defina aqui a forma correta de solicitação deste produto — código, embalagem, prazo de pedido e canal." style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px', resize: 'vertical' }}></textarea>
               </div>
 
               <div style={{ marginBottom: '15px' }}>
@@ -1178,6 +1208,11 @@ export default function Home() {
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Breve Descrição</label>
                 <input type="text" value={formData.tag} onChange={e => setFormData({...formData, tag: e.target.value})} style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px' }} />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Como solicitar corretamente (opcional)</label>
+                <textarea value={formData.como} onChange={e => setFormData({...formData, como: e.target.value})} rows="3" placeholder="Defina aqui a forma correta de solicitação deste produto — código, embalagem, prazo de pedido e canal." style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px', resize: 'vertical' }}></textarea>
               </div>
 
               <div style={{ marginBottom: '15px' }}>
