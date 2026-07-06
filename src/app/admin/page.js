@@ -66,13 +66,12 @@ export default function AdminPage() {
         imageUrl = publicUrlData.publicUrl;
       }
 
-      // 2. Aqui, em vez de salvar no localStorage, salvaríamos na tabela 'produtos' no Supabase
-      // Mas como a tabela ainda não foi criada, vamos apenas mostrar um log e exibir sucesso
-      
-      /*
+      const prodId = 'prod-' + Date.now();
+
       const { error: dbError } = await supabase
         .from('produtos')
         .insert([{
+          id: prodId,
           nome: formData.nome,
           marca: formData.marca,
           especialidade: formData.especialidade,
@@ -81,8 +80,11 @@ export default function AdminPage() {
           estados: formData.estados,
           imagem_url: imageUrl
         }]);
-      if (dbError) throw dbError;
-      */
+
+      if (dbError) {
+        console.error("Supabase Database Save Error (Admin Add):", dbError);
+        throw new Error('Erro ao salvar produto no banco: ' + dbError.message);
+      }
 
       console.log("DADOS DO PRODUTO A SALVAR NO SUPABASE:", { ...formData, imageUrl });
       

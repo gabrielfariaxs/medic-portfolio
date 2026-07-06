@@ -63,6 +63,64 @@ export default function Home() {
       });
   }, []);
 
+  useEffect(() => {
+    const loadDbProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('produtos')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.warn("Tabela 'produtos' não encontrada ou erro ao carregar:", error.message);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const dbProducts = data.map(item => {
+            if (item.estados && item.estados.length > 0) {
+              INITIAL_UF[item.id] = item.estados;
+            }
+            return {
+              id: item.id,
+              n: item.nome,
+              m: item.marca,
+              e: item.especialidade,
+              t: item.tipo,
+              tag: item.tag || '',
+              img: item.imagem_url
+            };
+          });
+
+          setProducts(prev => {
+            const dbIds = new Set(dbProducts.map(p => p.id));
+            const filteredInitial = INITIAL_PRODUCTS.filter(p => !dbIds.has(p.id));
+            return [...dbProducts, ...filteredInitial];
+          });
+        }
+      } catch (err) {
+        console.error("Erro ao carregar banco:", err);
+      }
+    };
+
+    loadDbProducts();
+
+    // Auto-refresh quando reabrir o app ou voltar a focar na aba
+    const handleVisibilityAndFocus = () => {
+      if (document.visibilityState === 'visible') {
+        loadDbProducts();
+      }
+    };
+
+    window.addEventListener('focus', loadDbProducts);
+    document.addEventListener('visibilitychange', handleVisibilityAndFocus);
+
+    return () => {
+      window.removeEventListener('focus', loadDbProducts);
+      document.removeEventListener('visibilitychange', handleVisibilityAndFocus);
+    };
+  }, []);
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setFormData({ ...formData, file: e.target.files[0] });
@@ -129,6 +187,25 @@ export default function Home() {
         img: imageUrl
       };
 
+      const { error: dbError } = await supabase
+        .from('produtos')
+        .insert([{
+          id: novoProduto.id,
+          nome: novoProduto.n,
+          marca: novoProduto.m,
+          especialidade: novoProduto.e,
+          tipo: novoProduto.t,
+          tag: novoProduto.tag,
+          imagem_url: imageUrl,
+          estados: formData.estados
+        }]);
+
+      if (dbError) {
+        console.error("Supabase Database Save Error (Add):", dbError);
+        throw new Error('Erro ao salvar produto no banco: ' + dbError.message);
+      }
+
+      INITIAL_UF[novoProduto.id] = formData.estados;
       setProducts(prev => [novoProduto, ...prev]);
       setSuccess('Produto adicionado ao catálogo!');
       
@@ -183,6 +260,24 @@ export default function Home() {
         imageUrl = publicUrlData.publicUrl;
       }
 
+      const { error: dbError } = await supabase
+        .from('produtos')
+        .update({
+          nome: formData.nome,
+          marca: formData.marca,
+          especialidade: formData.especialidade,
+          tipo: formData.tipo,
+          tag: formData.tag,
+          imagem_url: imageUrl,
+          estados: formData.estados
+        })
+        .eq('id', editingProduct.id);
+
+      if (dbError) {
+        console.error("Supabase Database Update Error (Edit):", dbError);
+        throw new Error('Erro ao atualizar produto no banco: ' + dbError.message);
+      }
+
       const updatedProducts = products.map(p => {
         if (p.id === editingProduct.id) {
           return {
@@ -221,6 +316,32 @@ export default function Home() {
 
     } catch (err) {
       alert(err.message || 'Erro ao editar produto');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async (id) => {
+    if (!confirm("Tem certeza que deseja excluir este produto permanentemente do catálogo?")) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('produtos')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw new Error('Erro ao excluir no banco: ' + error.message);
+      }
+
+      setProducts(prev => prev.filter(p => p.id !== id));
+      setSelectedProduct(null);
+      alert('Produto excluído com sucesso!');
+    } catch (err) {
+      alert(err.message || 'Erro ao excluir produto');
     } finally {
       setLoading(false);
     }
@@ -780,12 +901,20 @@ export default function Home() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="spec-line">{currentSpec?.nome}</span>
                   {isAdmin && (
-                    <button 
-                      onClick={() => openEditModal(selectedProduct)}
-                      style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      Editar Produto
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        onClick={() => openEditModal(selectedProduct)}
+                        style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Editar
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteProduct(selectedProduct.id)}
+                        style={{ padding: '6px 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Excluir
+                      </button>
+                    </div>
                   )}
                 </div>
                 <h2>{selectedProduct.n}</h2>
