@@ -409,11 +409,8 @@ export default function Home() {
   };
 
   const copyLink = (p) => {
-    // Copia o link e os dados básicos se quiser, ou apenas o link do site por enquanto
-    const link = window.location.origin; 
-    const txt = getResumoTexto(p) + '\n\nVeja mais em: ' + link;
-    navigator.clipboard.writeText(txt).then(() => {
-      alert('Resumo e link copiados com sucesso!');
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      alert('Link copiado com sucesso!');
     });
   };
 
