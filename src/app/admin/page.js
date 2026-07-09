@@ -17,7 +17,8 @@ export default function AdminPage() {
     tipo: TYPES[0],
     tag: '',
     estados: [],
-    file: null
+    file: null,
+    como: ''
   });
 
   const handleFileChange = (e) => {
@@ -78,7 +79,8 @@ export default function AdminPage() {
           tipo: formData.tipo,
           tag: formData.tag,
           estados: formData.estados,
-          imagem_url: imageUrl
+          imagem_url: imageUrl,
+          como: formData.como
         }]);
 
       if (dbError) {
@@ -98,7 +100,8 @@ export default function AdminPage() {
         tipo: TYPES[0],
         tag: '',
         estados: [],
-        file: null
+        file: null,
+        como: ''
       });
 
     } catch (err) {
@@ -182,6 +185,11 @@ export default function AdminPage() {
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Breve Descrição (Tag)</label>
               <input type="text" value={formData.tag} onChange={e => setFormData({...formData, tag: e.target.value})} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--line)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit' }} />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Como solicitar corretamente (opcional)</label>
+              <textarea value={formData.como} onChange={e => setFormData({...formData, como: e.target.value})} rows="3" placeholder="Defina aqui a forma correta de solicitação deste produto — código, embalagem, prazo de pedido e canal." style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--line)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical' }}></textarea>
             </div>
 
             <div style={{ marginBottom: '20px' }}>
