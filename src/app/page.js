@@ -275,7 +275,8 @@ export default function Home() {
 
       const { error: dbError } = await supabase
         .from('produtos')
-        .update({
+        .upsert({
+          id: editingProduct.id,
           nome: formData.nome,
           marca: formData.marca,
           especialidade: formData.especialidade,
@@ -284,8 +285,7 @@ export default function Home() {
           imagem_url: imageUrl,
           estados: formData.estados,
           como: formData.como
-        })
-        .eq('id', editingProduct.id);
+        });
 
       if (dbError) {
         console.error("Supabase Database Update Error (Edit):", dbError);
