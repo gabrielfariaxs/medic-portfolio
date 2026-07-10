@@ -23,7 +23,8 @@ export default function AdminPage() {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData({ ...formData, file: e.target.files[0] });
+      const file = e.target.files[0];
+      setFormData(prev => ({ ...prev, file }));
     }
   };
 
@@ -53,7 +54,10 @@ export default function AdminPage() {
         // Assumindo que criamos um bucket chamado 'images' no Supabase
         const { error: uploadError, data } = await supabase.storage
           .from('images')
-          .upload(filePath, formData.file);
+          .upload(filePath, formData.file, {
+            upsert: true,
+            cacheControl: '0'
+          });
 
         if (uploadError) {
           console.error("Supabase Storage Upload Error (Admin):", uploadError);
@@ -64,7 +68,7 @@ export default function AdminPage() {
           .from('images')
           .getPublicUrl(filePath);
 
-        imageUrl = publicUrlData.publicUrl;
+        imageUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
       const prodId = 'prod-' + Date.now();

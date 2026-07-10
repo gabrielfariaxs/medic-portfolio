@@ -125,7 +125,8 @@ export default function Home() {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData({ ...formData, file: e.target.files[0] });
+      const file = e.target.files[0];
+      setFormData(prev => ({ ...prev, file }));
     }
   };
 
@@ -166,7 +167,10 @@ export default function Home() {
 
         const { error: uploadError } = await supabase.storage
           .from('images')
-          .upload(filePath, formData.file);
+          .upload(filePath, formData.file, {
+            upsert: true,
+            cacheControl: '0'
+          });
 
         if (uploadError) {
           console.error("Supabase Storage Upload Error (Add):", uploadError);
@@ -177,7 +181,7 @@ export default function Home() {
           .from('images')
           .getPublicUrl(filePath);
 
-        imageUrl = publicUrlData.publicUrl;
+        imageUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
       const novoProduto = {
@@ -252,7 +256,10 @@ export default function Home() {
 
         const { error: uploadError } = await supabase.storage
           .from('images')
-          .upload(filePath, formData.file);
+          .upload(filePath, formData.file, {
+            upsert: true,
+            cacheControl: '0'
+          });
 
         if (uploadError) {
           console.error("Supabase Storage Upload Error (Edit):", uploadError);
@@ -263,7 +270,7 @@ export default function Home() {
           .from('images')
           .getPublicUrl(filePath);
 
-        imageUrl = publicUrlData.publicUrl;
+        imageUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
       const { error: dbError } = await supabase
