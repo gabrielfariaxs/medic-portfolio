@@ -59,7 +59,7 @@ export const SPECS=[
 ];
 
 export const TYPES = ['Implante','Instrumental','Consumível','Biológico','Tecnologia'];
-export const BADGES = [{k:'novo',l:'Lançamentos'},{k:'top',l:'Mais vendidos'},{k:'premium',l:'Premium'}];
+export const BADGES = [{k:'novo',l:'Lançamentos'},{k:'top',l:'Mais vendidos'},{k:'premium',l:'Premium'},{k:'exclusivo',l:'Exclusivo'}];
 
 export const INITIAL_PRODUCTS = [
  // ---------- TRAUMA ----------
@@ -266,4 +266,4 @@ export const ICN={
   doc:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>',
 };
 
-export const badgeMeta={novo:{cls:'novo',l:'Lançamento'},top:{cls:'top',l:'Mais vendido'},premium:{cls:'premium',l:'Premium'}};
+export const badgeMeta={novo:{cls:'novo',l:'Lançamento'},top:{cls:'top',l:'Mais vendido'},premium:{cls:'premium',l:'Premium'},exclusivo:{cls:'excl',l:'★ Exclusivo'}};

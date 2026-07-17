@@ -3,11 +3,11 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   const cookieStore = await cookies();
-  const session = cookieStore.get('arthromed_admin_session');
+  const session = cookieStore.get('arthromed_session');
 
-  if (session && session.value === 'authenticated') {
-    return NextResponse.json({ isAdmin: true });
+  if (session && (session.value === 'admin' || session.value === 'vendedor')) {
+    return NextResponse.json({ role: session.value });
   }
 
-  return NextResponse.json({ isAdmin: false });
+  return NextResponse.json({ role: null });
 }

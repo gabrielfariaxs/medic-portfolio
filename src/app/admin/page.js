@@ -18,13 +18,23 @@ export default function AdminPage() {
     tag: '',
     estados: [],
     file: null,
-    como: ''
+    pdfFile: null,
+    como: '',
+    exclusivo: false,
+    anvisa: ''
   });
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setFormData(prev => ({ ...prev, file }));
+    }
+  };
+
+  const handlePdfChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const pdfFile = e.target.files[0];
+      setFormData(prev => ({ ...prev, pdfFile }));
     }
   };
 
@@ -71,6 +81,31 @@ export default function AdminPage() {
         imageUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
+      let pdfUrl = null;
+      if (formData.pdfFile) {
+        const fileExt = formData.pdfFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `pdfs/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('docs')
+          .upload(filePath, formData.pdfFile, {
+            upsert: true,
+            cacheControl: '0'
+          });
+
+        if (uploadError) {
+          console.error("Supabase Storage Upload Error (Admin Add PDF):", uploadError);
+          throw new Error('Erro ao fazer upload do PDF: ' + (uploadError.message || JSON.stringify(uploadError)));
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('docs')
+          .getPublicUrl(filePath);
+
+        pdfUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+      }
+
       const prodId = 'prod-' + Date.now();
 
       const { error: dbError } = await supabase
@@ -84,7 +119,10 @@ export default function AdminPage() {
           tag: formData.tag,
           estados: formData.estados,
           imagem_url: imageUrl,
-          como: formData.como
+          tecnica_url: pdfUrl,
+          como: formData.como,
+          anvisa: formData.anvisa,
+          exclusivo: formData.exclusivo
         }]);
 
       if (dbError) {
@@ -105,7 +143,10 @@ export default function AdminPage() {
         tag: '',
         estados: [],
         file: null,
-        como: ''
+        pdfFile: null,
+        como: '',
+        exclusivo: false,
+        anvisa: ''
       });
 
     } catch (err) {
@@ -130,8 +171,7 @@ export default function AdminPage() {
   };
 
   const handleLogout = async () => {
-    // Para simplificar: apenas limpa o cookie (em produção o ideal é uma rota de api de logout)
-    document.cookie = "arthromed_admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    await fetch('/api/auth/logout', { method: 'POST' });
     window.location.href = "/login";
   };
 
@@ -186,14 +226,27 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Breve Descrição (Tag)</label>
-              <input type="text" value={formData.tag} onChange={e => setFormData({...formData, tag: e.target.value})} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--line)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit' }} />
+            <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Breve Descrição (Tag)</label>
+                <input type="text" value={formData.tag} onChange={e => setFormData({...formData, tag: e.target.value})} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--line)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Nº Registro ANVISA</label>
+                <input type="text" value={formData.anvisa} onChange={e => setFormData({...formData, anvisa: e.target.value})} placeholder="Ex: 10000000000" style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--line)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit' }} />
+              </div>
             </div>
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Como solicitar corretamente (opcional)</label>
               <textarea value={formData.como} onChange={e => setFormData({...formData, como: e.target.value})} rows="3" placeholder="Defina aqui a forma correta de solicitação deste produto — código, embalagem, prazo de pedido e canal." style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--line)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical' }}></textarea>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--ink-2)' }}>
+                <input type="checkbox" checked={formData.exclusivo} onChange={e => setFormData({...formData, exclusivo: e.target.checked})} style={{ marginRight: '8px', width: '16px', height: '16px' }} />
+                Produto Exclusivo Arthromed
+              </label>
             </div>
 
             <div style={{ marginBottom: '20px' }}>
@@ -222,9 +275,14 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div style={{ marginBottom: '30px' }}>
+            <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Foto do Produto (Tire do celular ou envie do PC)</label>
               <input type="file" accept="image/*" onChange={handleFileChange} style={{ width: '100%', padding: '12px 14px', border: '1.5px dashed var(--azul)', borderRadius: '8px', fontSize: '14px', background: '#f8fafc' }} />
+            </div>
+
+            <div style={{ marginBottom: '30px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Técnica Cirúrgica (Opcional - Apenas PDF)</label>
+              <input type="file" accept="application/pdf" onChange={handlePdfChange} style={{ width: '100%', padding: '12px 14px', border: '1.5px dashed var(--azul)', borderRadius: '8px', fontSize: '14px', background: '#f8fafc' }} />
             </div>
 
             <button 
