@@ -182,7 +182,7 @@ header{
 .pill.novo{background:var(--azul)}
 .pill.top{background:var(--grafite)}
 .pill.premium{background:linear-gradient(135deg,#b88a2e,#e6c463);color:#3a2c08}
-.pill.excl{background:linear-gradient(135deg,#0c7a5e,#06df82);color:#04241a;display:inline-flex;align-items:center;gap:4px}
+.pill.excl{background:var(--azul);color:#fff;display:inline-flex;align-items:center;gap:4px;box-shadow:0 4px 12px rgba(31,41,222,.28)}
 .pill.excl svg{margin-top:-1px}
 .card .cbody{padding:15px 16px 16px;display:flex;flex-direction:column;flex:1;gap:8px}
 .uf-row{display:flex;flex-wrap:wrap;gap:4px}

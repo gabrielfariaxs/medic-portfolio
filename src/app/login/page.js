@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('admin');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ export default function Login() {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ role, password }),
       });
 
       if (res.ok) {
@@ -48,15 +48,16 @@ export default function Login() {
         )}
 
         <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>E-mail</label>
-          <input 
-            type="email" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Acessar como:</label>
+          <select 
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
             style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--line)', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit' }}
-            placeholder="admin@arthromed.com.br"
             required
-          />
+          >
+            <option value="admin">Administrador</option>
+            <option value="vendedor">Vendedor</option>
+          </select>
         </div>
 
         <div style={{ marginBottom: '20px' }}>

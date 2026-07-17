@@ -32,10 +32,12 @@ export default function Home() {
   const [activeType, setActiveType] = useState("");
   const [activeUf, setActiveUf] = useState("");
   const [activeBadge, setActiveBadge] = useState("");
+  const [activeMarca, setActiveMarca] = useState("");
+  const [showAllMarcas, setShowAllMarcas] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
   
   // Auth & Admin UI
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   
@@ -53,15 +55,19 @@ export default function Home() {
     tag: '',
     estados: [],
     file: null,
-    como: ''
+    pdfFile: null,
+    como: '',
+    exclusivo: false,
+    anvisa: ''
   });
 
   useEffect(() => {
     fetch('/api/auth/check')
       .then(res => res.json())
       .then(data => {
-        if (data.isAdmin) setIsAdmin(true);
-      });
+        setUserRole(data.role || null);
+      })
+      .catch(() => setUserRole(null));
   }, []);
 
   useEffect(() => {
@@ -90,7 +96,10 @@ export default function Home() {
               t: item.tipo,
               tag: item.tag || '',
               img: item.imagem_url,
-              como: item.como || ''
+              tecnica_url: item.tecnica_url,
+              como: item.como || '',
+              anvisa: item.anvisa || '',
+              b: item.exclusivo ? ['exclusivo'] : []
             };
           });
 
@@ -130,6 +139,13 @@ export default function Home() {
     }
   };
 
+  const handlePdfChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const pdfFile = e.target.files[0];
+      setFormData(prev => ({ ...prev, pdfFile }));
+    }
+  };
+
   const toggleUF = (uf) => {
     const isSelected = formData.estados.includes(uf);
     if (isSelected) {
@@ -149,7 +165,10 @@ export default function Home() {
       tag: p.tag || '',
       estados: INITIAL_UF[p.id] || [],
       file: null,
-      como: p.como || ''
+      pdfFile: null,
+      como: p.como || '',
+      anvisa: p.anvisa || '',
+      exclusivo: p.b?.includes('exclusivo') || false
     });
   };
 
@@ -184,6 +203,31 @@ export default function Home() {
         imageUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
+      let pdfUrl = null;
+      if (formData.pdfFile) {
+        const fileExt = formData.pdfFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `pdfs/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('docs')
+          .upload(filePath, formData.pdfFile, {
+            upsert: true,
+            cacheControl: '0'
+          });
+
+        if (uploadError) {
+          console.error("Supabase Storage Upload Error (Add PDF):", uploadError);
+          throw new Error('Erro ao fazer upload do PDF: ' + (uploadError.message || JSON.stringify(uploadError)));
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('docs')
+          .getPublicUrl(filePath);
+
+        pdfUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+      }
+
       const novoProduto = {
         id: 'prod-' + Date.now(),
         n: formData.nome,
@@ -192,7 +236,10 @@ export default function Home() {
         t: formData.tipo,
         tag: formData.tag,
         img: imageUrl,
-        como: formData.como
+        tecnica_url: pdfUrl,
+        como: formData.como,
+        anvisa: formData.anvisa,
+        b: formData.exclusivo ? ['exclusivo'] : []
       };
 
       const { error: dbError } = await supabase
@@ -205,8 +252,11 @@ export default function Home() {
           tipo: novoProduto.t,
           tag: novoProduto.tag,
           imagem_url: imageUrl,
+          tecnica_url: pdfUrl,
           estados: formData.estados,
-          como: formData.como
+          como: formData.como,
+          anvisa: formData.anvisa,
+          exclusivo: formData.exclusivo
         }]);
 
       if (dbError) {
@@ -226,7 +276,10 @@ export default function Home() {
         tag: '',
         estados: [],
         file: null,
-        como: ''
+        pdfFile: null,
+        como: '',
+        exclusivo: false,
+        anvisa: ''
       });
 
       setTimeout(() => {
@@ -273,6 +326,31 @@ export default function Home() {
         imageUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
+      let pdfUrl = editingProduct.tecnica_url || null;
+      if (formData.pdfFile) {
+        const fileExt = formData.pdfFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `pdfs/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('docs')
+          .upload(filePath, formData.pdfFile, {
+            upsert: true,
+            cacheControl: '0'
+          });
+
+        if (uploadError) {
+          console.error("Supabase Storage Upload Error (Edit PDF):", uploadError);
+          throw new Error('Erro ao enviar novo PDF: ' + (uploadError.message || JSON.stringify(uploadError)));
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('docs')
+          .getPublicUrl(filePath);
+
+        pdfUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+      }
+
       const { error: dbError } = await supabase
         .from('produtos')
         .upsert({
@@ -283,8 +361,11 @@ export default function Home() {
           tipo: formData.tipo,
           tag: formData.tag,
           imagem_url: imageUrl,
+          tecnica_url: pdfUrl,
           estados: formData.estados,
-          como: formData.como
+          como: formData.como,
+          anvisa: formData.anvisa,
+          exclusivo: formData.exclusivo
         });
 
       if (dbError) {
@@ -302,7 +383,10 @@ export default function Home() {
             t: formData.tipo,
             tag: formData.tag,
             img: imageUrl,
-            como: formData.como
+            tecnica_url: pdfUrl,
+            como: formData.como,
+            anvisa: formData.anvisa,
+            b: formData.exclusivo ? ['exclusivo'] : []
           };
         }
         return p;
@@ -318,7 +402,10 @@ export default function Home() {
           t: formData.tipo,
           tag: formData.tag,
           img: imageUrl,
-          como: formData.como
+          tecnica_url: pdfUrl,
+          como: formData.como,
+          anvisa: formData.anvisa,
+          b: formData.exclusivo ? ['exclusivo'] : []
         });
       }
 
@@ -367,7 +454,9 @@ export default function Home() {
   const filteredProducts = products.filter((p) => {
     if (activeSpec && p.e !== activeSpec) return false;
     if (activeType && p.t !== activeType) return false;
+    if (activeMarca && p.m !== activeMarca) return false;
     if (activeBadge) {
+      if (activeBadge === "exclusivo" && (!p.b || !p.b.includes("exclusivo"))) return false;
       if (activeBadge === "novo" && (!p.b || !p.b.includes("novo"))) return false;
       if (activeBadge === "top" && (!p.b || !p.b.includes("top"))) return false;
       if (activeBadge === "premium" && (!p.b || !p.b.includes("premium"))) return false;
@@ -384,6 +473,8 @@ export default function Home() {
     }
     return true;
   });
+
+  const marcasDisponiveis = Array.from(new Set(products.map(p => p.m).filter(m => m && m !== '—'))).sort();
 
   const getSpec = (id) => SPECS.find((s) => s.id === id);
 
@@ -505,8 +596,7 @@ export default function Home() {
     };
 
     renderSpecRow("Fabricante:", p.m !== '—' ? p.m : 'Curadoria Arthromed');
-    renderSpecRow("Material:", p.mat || 'Sob consulta');
-    renderSpecRow("Reg. ANVISA:", 'Sob consulta');
+    renderSpecRow("Reg. ANVISA:", p.anvisa || 'Sob consulta');
 
     let curY = 96;
 
@@ -799,9 +889,13 @@ export default function Home() {
             <kbd>/</kbd>
           </div>
           <div className="actions">
-            {isAdmin ? (
+            {userRole === 'admin' ? (
               <button className="btn btn-grad" onClick={() => setIsModalOpen(true)}>
                 + Adicionar Produto
+              </button>
+            ) : userRole === 'vendedor' ? (
+              <button className="btn btn-ghost" onClick={() => { fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.reload()); }}>
+                Sair
               </button>
             ) : (
               <a className="btn btn-ghost" href="/login">
@@ -843,6 +937,20 @@ export default function Home() {
                 {t}
               </button>
             ))}
+          </div>
+
+          <div className="eyebrow">Fabricantes</div>
+          <div className="chips">
+            {(showAllMarcas ? marcasDisponiveis : marcasDisponiveis.slice(0, 5)).map(m => (
+              <button key={m} className={`filter-chip ${activeMarca === m ? 'on' : ''}`} onClick={() => setActiveMarca(activeMarca === m ? '' : m)}>
+                {m}
+              </button>
+            ))}
+            {marcasDisponiveis.length > 5 && (
+              <button className="filter-chip" style={{ borderStyle: 'dashed', background: 'transparent' }} onClick={() => setShowAllMarcas(!showAllMarcas)}>
+                {showAllMarcas ? '- Ver menos' : '+ Ver mais'}
+              </button>
+            )}
           </div>
 
           <div className="eyebrow">Disponível no estado</div>
@@ -929,7 +1037,7 @@ export default function Home() {
               <div className="pf-wrap" style={{ '--c': currentSpec?.c }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="spec-line">{currentSpec?.nome}</span>
-                  {isAdmin && (
+                  {userRole === 'admin' && (
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         onClick={() => openEditModal(selectedProduct)}
@@ -958,13 +1066,9 @@ export default function Home() {
                     <div className="k">Categoria</div>
                     <div className="v">{selectedProduct.t}</div>
                   </div>
-                  <div className="cell">
-                    <div className="k">Material</div>
-                    <div className="v">{selectedProduct.mat || 'Sob consulta'}</div>
-                  </div>
-                  <div className="cell">
+                  <div className="cell" style={{ gridColumn: '1 / -1' }}>
                     <div className="k">Registro ANVISA</div>
-                    <div className="v mono">Sob consulta</div>
+                    <div className="v mono">{selectedProduct.anvisa || 'Sob consulta'}</div>
                   </div>
                 </div>
 
@@ -974,7 +1078,7 @@ export default function Home() {
                     <span dangerouslySetInnerHTML={{ __html: ICN.doc }}></span>
                     <span>Como solicitar corretamente</span>
                   </div>
-                  <p>{selectedProduct.como || 'Defina aqui a forma correta de solicitação deste produto — código, embalagem, prazo de pedido e canal.'}</p>
+                  <p style={{ whiteSpace: 'pre-wrap' }}>{selectedProduct.como || 'Defina aqui a forma correta de solicitação deste produto — código, embalagem, prazo de pedido e canal.'}</p>
                 </div>
 
                 {/* Disponibilidade */}
@@ -1073,6 +1177,14 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+                {/* Footer Drawer */}
+                {selectedProduct.tecnica_url && (userRole === 'admin' || userRole === 'vendedor') && (
+                  <div style={{ marginTop: '30px' }}>
+                    <a href={selectedProduct.tecnica_url} target="_blank" rel="noopener noreferrer" className="btn btn-grad" style={{ width: '100%', justifyContent: 'center', background: 'var(--azul)' }}>
+                      <span dangerouslySetInnerHTML={{ __html: ICN.doc }}></span> Ver Técnica Cirúrgica (PDF)
+                    </a>
+                  </div>
+                )}
               </div>
 
               <div className="pf-actions">
@@ -1082,9 +1194,11 @@ export default function Home() {
                 <a className="btn btn-ghost" style={{ flex: 1, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} href="https://wa.me/5581989236136" target="_blank" rel="noopener noreferrer">
                   WhatsApp
                 </a>
-                <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => downloadProductPDF(selectedProduct)}>
-                  Baixar PDF
-                </button>
+                {(userRole === 'admin' || userRole === 'vendedor') && (
+                  <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => downloadProductPDF(selectedProduct)}>
+                    Baixar PDF
+                  </button>
+                )}
               </div>
             </>
           )}
@@ -1092,7 +1206,7 @@ export default function Home() {
       </aside>
 
       {/* MODAL DE ADICIONAR PRODUTO (Somente Admin) */}
-      {isAdmin && isModalOpen && (
+      {userRole === 'admin' && isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: '20px' }}>
           <div style={{ background: 'var(--surface)', padding: '30px', borderRadius: '16px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -1133,14 +1247,27 @@ export default function Home() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Breve Descrição</label>
-                <input type="text" value={formData.tag} onChange={e => setFormData({...formData, tag: e.target.value})} style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px' }} />
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Breve Descrição</label>
+                  <input type="text" value={formData.tag} onChange={e => setFormData({...formData, tag: e.target.value})} style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Nº Registro ANVISA</label>
+                  <input type="text" value={formData.anvisa} onChange={e => setFormData({...formData, anvisa: e.target.value})} placeholder="Ex: 10000000000" style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px' }} />
+                </div>
               </div>
 
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Como solicitar corretamente (opcional)</label>
                 <textarea value={formData.como} onChange={e => setFormData({...formData, como: e.target.value})} rows="3" placeholder="Defina aqui a forma correta de solicitação deste produto — código, embalagem, prazo de pedido e canal." style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px', resize: 'vertical' }}></textarea>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--ink-2)' }}>
+                  <input type="checkbox" checked={formData.exclusivo} onChange={e => setFormData({...formData, exclusivo: e.target.checked})} style={{ marginRight: '8px', width: '16px', height: '16px' }} />
+                  Produto Exclusivo Arthromed
+                </label>
               </div>
 
               <div style={{ marginBottom: '15px' }}>
@@ -1159,6 +1286,11 @@ export default function Home() {
                 <input type="file" accept="image/*" onChange={handleFileChange} style={{ width: '100%', padding: '10px', border: '1px dashed var(--azul)', borderRadius: '8px' }} />
               </div>
 
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Técnica Cirúrgica (Opcional - Apenas PDF)</label>
+                <input type="file" accept="application/pdf" onChange={handlePdfChange} style={{ width: '100%', padding: '10px', border: '1px dashed var(--azul)', borderRadius: '8px' }} />
+              </div>
+
               <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: 'var(--grad)', color: '#fff', borderRadius: '8px', fontWeight: 800, border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
                 {loading ? 'Salvando...' : 'Adicionar ao Portfólio'}
               </button>
@@ -1168,7 +1300,7 @@ export default function Home() {
       )}
 
       {/* MODAL DE EDITAR PRODUTO (Somente Admin) */}
-      {isAdmin && editingProduct && (
+      {userRole === 'admin' && editingProduct && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', padding: '20px' }}>
           <div style={{ background: 'var(--surface)', padding: '30px', borderRadius: '16px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -1209,14 +1341,27 @@ export default function Home() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Breve Descrição</label>
-                <input type="text" value={formData.tag} onChange={e => setFormData({...formData, tag: e.target.value})} style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px' }} />
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Breve Descrição</label>
+                  <input type="text" value={formData.tag} onChange={e => setFormData({...formData, tag: e.target.value})} style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Nº Registro ANVISA</label>
+                  <input type="text" value={formData.anvisa} onChange={e => setFormData({...formData, anvisa: e.target.value})} placeholder="Ex: 10000000000" style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px' }} />
+                </div>
               </div>
 
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Como solicitar corretamente (opcional)</label>
                 <textarea value={formData.como} onChange={e => setFormData({...formData, como: e.target.value})} rows="3" placeholder="Defina aqui a forma correta de solicitação deste produto — código, embalagem, prazo de pedido e canal." style={{ width: '100%', padding: '10px', border: '1px solid var(--line)', borderRadius: '8px', resize: 'vertical' }}></textarea>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--ink-2)' }}>
+                  <input type="checkbox" checked={formData.exclusivo} onChange={e => setFormData({...formData, exclusivo: e.target.checked})} style={{ marginRight: '8px', width: '16px', height: '16px' }} />
+                  Produto Exclusivo Arthromed
+                </label>
               </div>
 
               <div style={{ marginBottom: '15px' }}>
@@ -1233,6 +1378,16 @@ export default function Home() {
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Nova Foto do Produto (Deixe em branco para manter a atual)</label>
                 <input type="file" accept="image/*" onChange={handleFileChange} style={{ width: '100%', padding: '10px', border: '1px dashed var(--azul)', borderRadius: '8px' }} />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Nova Técnica Cirúrgica (PDF - Opcional. Deixe em branco para manter a atual)</label>
+                <input type="file" accept="application/pdf" onChange={handlePdfChange} style={{ width: '100%', padding: '10px', border: '1px dashed var(--azul)', borderRadius: '8px' }} />
+                {editingProduct.tecnica_url && (
+                  <div style={{ marginTop: '8px', fontSize: '12px' }}>
+                    Arquivo atual: <a href={editingProduct.tecnica_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--azul)', textDecoration: 'underline' }}>Baixar PDF</a>
+                  </div>
+                )}
               </div>
 
               <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: 'var(--grad)', color: '#fff', borderRadius: '8px', fontWeight: 800, border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
