@@ -19,6 +19,7 @@ export default function AdminPage() {
     estados: [],
     file: null,
     pdfFile: null,
+    docxFile: null,
     como: '',
     exclusivo: false,
     anvisa: ''
@@ -35,6 +36,13 @@ export default function AdminPage() {
     if (e.target.files && e.target.files[0]) {
       const pdfFile = e.target.files[0];
       setFormData(prev => ({ ...prev, pdfFile }));
+    }
+  };
+
+  const handleDocxChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const docxFile = e.target.files[0];
+      setFormData(prev => ({ ...prev, docxFile }));
     }
   };
 
@@ -106,6 +114,31 @@ export default function AdminPage() {
         pdfUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
+      let docxUrl = null;
+      if (formData.docxFile) {
+        const fileExt = formData.docxFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `modelos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('docs')
+          .upload(filePath, formData.docxFile, {
+            upsert: true,
+            cacheControl: '0'
+          });
+
+        if (uploadError) {
+          console.error("Supabase Storage Upload Error (Admin Add DOCX):", uploadError);
+          throw new Error('Erro ao fazer upload do Modelo de Pedido: ' + (uploadError.message || JSON.stringify(uploadError)));
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('docs')
+          .getPublicUrl(filePath);
+
+        docxUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+      }
+
       const prodId = 'prod-' + Date.now();
 
       const { error: dbError } = await supabase
@@ -120,6 +153,7 @@ export default function AdminPage() {
           estados: formData.estados,
           imagem_url: imageUrl,
           tecnica_url: pdfUrl,
+          modelo_pedido_url: docxUrl,
           como: formData.como,
           anvisa: formData.anvisa,
           exclusivo: formData.exclusivo
@@ -130,7 +164,7 @@ export default function AdminPage() {
         throw new Error('Erro ao salvar produto no banco: ' + dbError.message);
       }
 
-      console.log("DADOS DO PRODUTO A SALVAR NO SUPABASE:", { ...formData, imageUrl });
+      console.log("DADOS DO PRODUTO A SALVAR NO SUPABASE:", { ...formData, imageUrl, docxUrl });
       
       setSuccess('Produto adicionado com sucesso!');
       
@@ -144,6 +178,7 @@ export default function AdminPage() {
         estados: [],
         file: null,
         pdfFile: null,
+        docxFile: null,
         como: '',
         exclusivo: false,
         anvisa: ''
@@ -280,9 +315,14 @@ export default function AdminPage() {
               <input type="file" accept="image/*" onChange={handleFileChange} style={{ width: '100%', padding: '12px 14px', border: '1.5px dashed var(--azul)', borderRadius: '8px', fontSize: '14px', background: '#f8fafc' }} />
             </div>
 
-            <div style={{ marginBottom: '30px' }}>
+            <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Técnica Cirúrgica (Opcional - Apenas PDF)</label>
               <input type="file" accept="application/pdf" onChange={handlePdfChange} style={{ width: '100%', padding: '12px 14px', border: '1.5px dashed var(--azul)', borderRadius: '8px', fontSize: '14px', background: '#f8fafc' }} />
+            </div>
+
+            <div style={{ marginBottom: '30px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink-2)' }}>Modelo de Pedido (Opcional - Apenas DOCX)</label>
+              <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleDocxChange} style={{ width: '100%', padding: '12px 14px', border: '1.5px dashed var(--azul)', borderRadius: '8px', fontSize: '14px', background: '#f8fafc' }} />
             </div>
 
             <button 

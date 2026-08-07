@@ -44,6 +44,19 @@ export default function Home() {
   // Drawer (Product Details)
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  const handleSelectProduct = (p) => {
+    setSelectedProduct(p);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (p && p.id) {
+        url.searchParams.set('p', p.id);
+      } else {
+        url.searchParams.delete('p');
+      }
+      window.history.replaceState(null, '', url.pathname + url.search);
+    }
+  };
+
   // Product Form state (Add & Edit)
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
@@ -56,6 +69,7 @@ export default function Home() {
     estados: [],
     file: null,
     pdfFile: null,
+    docxFile: null,
     como: '',
     exclusivo: false,
     anvisa: ''
@@ -97,6 +111,7 @@ export default function Home() {
               tag: item.tag || '',
               img: item.imagem_url,
               tecnica_url: item.tecnica_url,
+              modelo_pedido_url: item.modelo_pedido_url,
               como: item.como || '',
               anvisa: item.anvisa || '',
               b: item.exclusivo ? ['exclusivo'] : []
@@ -132,6 +147,35 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && products && products.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const productId = urlParams.get('p');
+      if (productId) {
+        const found = products.find(p => String(p.id).toLowerCase() === String(productId).toLowerCase());
+        if (found && (!selectedProduct || selectedProduct.id !== found.id)) {
+          setSelectedProduct(found);
+        }
+      }
+    }
+  }, [products]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const productId = urlParams.get('p');
+      if (productId && products) {
+        const found = products.find(p => String(p.id).toLowerCase() === String(productId).toLowerCase());
+        setSelectedProduct(found || null);
+      } else {
+        setSelectedProduct(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [products]);
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -143,6 +187,13 @@ export default function Home() {
     if (e.target.files && e.target.files[0]) {
       const pdfFile = e.target.files[0];
       setFormData(prev => ({ ...prev, pdfFile }));
+    }
+  };
+
+  const handleDocxChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const docxFile = e.target.files[0];
+      setFormData(prev => ({ ...prev, docxFile }));
     }
   };
 
@@ -166,6 +217,9 @@ export default function Home() {
       estados: INITIAL_UF[p.id] || [],
       file: null,
       pdfFile: null,
+      docxFile: null,
+      removePdf: false,
+      removeDocx: false,
       como: p.como || '',
       anvisa: p.anvisa || '',
       exclusivo: p.b?.includes('exclusivo') || false
@@ -228,6 +282,31 @@ export default function Home() {
         pdfUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
+      let docxUrl = null;
+      if (formData.docxFile) {
+        const fileExt = formData.docxFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `modelos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('docs')
+          .upload(filePath, formData.docxFile, {
+            upsert: true,
+            cacheControl: '0'
+          });
+
+        if (uploadError) {
+          console.error("Supabase Storage Upload Error (Add DOCX):", uploadError);
+          throw new Error('Erro ao fazer upload do Modelo de Pedido: ' + (uploadError.message || JSON.stringify(uploadError)));
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('docs')
+          .getPublicUrl(filePath);
+
+        docxUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+      }
+
       const novoProduto = {
         id: 'prod-' + Date.now(),
         n: formData.nome,
@@ -237,6 +316,7 @@ export default function Home() {
         tag: formData.tag,
         img: imageUrl,
         tecnica_url: pdfUrl,
+        modelo_pedido_url: docxUrl,
         como: formData.como,
         anvisa: formData.anvisa,
         b: formData.exclusivo ? ['exclusivo'] : []
@@ -253,6 +333,7 @@ export default function Home() {
           tag: novoProduto.tag,
           imagem_url: imageUrl,
           tecnica_url: pdfUrl,
+          modelo_pedido_url: docxUrl,
           estados: formData.estados,
           como: formData.como,
           anvisa: formData.anvisa,
@@ -277,6 +358,7 @@ export default function Home() {
         estados: [],
         file: null,
         pdfFile: null,
+        docxFile: null,
         como: '',
         exclusivo: false,
         anvisa: ''
@@ -326,7 +408,18 @@ export default function Home() {
         imageUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
-      let pdfUrl = editingProduct.tecnica_url || null;
+      let pdfUrl = formData.removePdf ? null : (editingProduct.tecnica_url || null);
+      if (formData.removePdf && editingProduct.tecnica_url && editingProduct.tecnica_url.includes('/storage/v1/object/public/docs/')) {
+        try {
+          const relativePath = editingProduct.tecnica_url.split('/storage/v1/object/public/docs/')[1]?.split('?')[0];
+          if (relativePath) {
+            await supabase.storage.from('docs').remove([relativePath]);
+          }
+        } catch (e) {
+          console.warn("Erro ao remover PDF do storage:", e);
+        }
+      }
+
       if (formData.pdfFile) {
         const fileExt = formData.pdfFile.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -351,6 +444,42 @@ export default function Home() {
         pdfUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
+      let docxUrl = formData.removeDocx ? null : (editingProduct.modelo_pedido_url || null);
+      if (formData.removeDocx && editingProduct.modelo_pedido_url && editingProduct.modelo_pedido_url.includes('/storage/v1/object/public/docs/')) {
+        try {
+          const relativePath = editingProduct.modelo_pedido_url.split('/storage/v1/object/public/docs/')[1]?.split('?')[0];
+          if (relativePath) {
+            await supabase.storage.from('docs').remove([relativePath]);
+          }
+        } catch (e) {
+          console.warn("Erro ao remover DOCX do storage:", e);
+        }
+      }
+
+      if (formData.docxFile) {
+        const fileExt = formData.docxFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `modelos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('docs')
+          .upload(filePath, formData.docxFile, {
+            upsert: true,
+            cacheControl: '0'
+          });
+
+        if (uploadError) {
+          console.error("Supabase Storage Upload Error (Edit DOCX):", uploadError);
+          throw new Error('Erro ao enviar novo Modelo de Pedido: ' + (uploadError.message || JSON.stringify(uploadError)));
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('docs')
+          .getPublicUrl(filePath);
+
+        docxUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+      }
+
       const { error: dbError } = await supabase
         .from('produtos')
         .upsert({
@@ -362,6 +491,7 @@ export default function Home() {
           tag: formData.tag,
           imagem_url: imageUrl,
           tecnica_url: pdfUrl,
+          modelo_pedido_url: docxUrl,
           estados: formData.estados,
           como: formData.como,
           anvisa: formData.anvisa,
@@ -384,6 +514,7 @@ export default function Home() {
             tag: formData.tag,
             img: imageUrl,
             tecnica_url: pdfUrl,
+            modelo_pedido_url: docxUrl,
             como: formData.como,
             anvisa: formData.anvisa,
             b: formData.exclusivo ? ['exclusivo'] : []
@@ -403,6 +534,7 @@ export default function Home() {
           tag: formData.tag,
           img: imageUrl,
           tecnica_url: pdfUrl,
+          modelo_pedido_url: docxUrl,
           como: formData.como,
           anvisa: formData.anvisa,
           b: formData.exclusivo ? ['exclusivo'] : []
@@ -441,7 +573,7 @@ export default function Home() {
       }
 
       setProducts(prev => prev.filter(p => p.id !== id));
-      setSelectedProduct(null);
+      handleSelectProduct(null);
       alert('Produto excluído com sucesso!');
     } catch (err) {
       alert(err.message || 'Erro ao excluir produto');
@@ -473,6 +605,18 @@ export default function Home() {
     }
     return true;
   });
+
+  // Dynamic stats based on active filters
+  const dynamicSpecsCount = new Set(filteredProducts.map(p => p.e)).size;
+  const dynamicProductsCount = filteredProducts.length;
+  const dynamicBrandsCount = new Set(filteredProducts.map(p => p.m).filter(m => m && m !== '—')).size;
+  
+  const dynamicUfs = new Set();
+  filteredProducts.forEach(p => {
+    const ufs = INITIAL_UF[p.id] || [];
+    ufs.forEach(u => dynamicUfs.add(u));
+  });
+  const dynamicStatesCount = dynamicUfs.size;
 
   const marcasDisponiveis = Array.from(new Set(products.map(p => p.m).filter(m => m && m !== '—'))).sort();
 
@@ -506,28 +650,62 @@ export default function Home() {
     return t;
   };
 
+  const copyTextToClipboard = (text, successMsg = 'Link copiado com sucesso!') => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert(successMsg);
+      }).catch(() => {
+        fallbackCopyText(text, successMsg);
+      });
+    } else {
+      fallbackCopyText(text, successMsg);
+    }
+  };
+
+  const fallbackCopyText = (text, successMsg) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      alert(successMsg);
+    } catch (err) {
+      alert('Não foi possível copiar o link.');
+    }
+    document.body.removeChild(textArea);
+  };
+
   const copyLink = (p) => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      alert('Link copiado com sucesso!');
-    });
+    if (!p) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('p', p.id);
+    const prodUrl = url.toString();
+    window.history.replaceState(null, '', url.pathname + url.search);
+    copyTextToClipboard(prodUrl, 'Link do produto copiado com sucesso!');
   };
 
   const shareProduct = async (p) => {
+    if (!p) return;
     const txt = getResumoTexto(p);
+    const url = new URL(window.location.href);
+    url.searchParams.set('p', p.id);
+    const prodUrl = url.toString();
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: p.n,
           text: txt,
-          url: window.location.href
+          url: prodUrl
         });
       } catch (err) {
         console.error('Erro ao compartilhar:', err);
       }
     } else {
-      navigator.clipboard.writeText(txt).then(() => {
-        alert('Resumo copiado com sucesso!');
-      });
+      copyTextToClipboard(`${txt}\n\nLink: ${prodUrl}`, 'Resumo e link copiados com sucesso!');
     }
   };
 
@@ -723,7 +901,7 @@ export default function Home() {
     const uf = INITIAL_UF[p.id];
     
     return (
-      <div key={p.id} className="card" style={{ '--c': spec ? spec.c : 'var(--azul)' }} onClick={() => setSelectedProduct(p)}>
+      <div key={p.id} className="card" style={{ '--c': spec ? spec.c : 'var(--azul)' }} onClick={() => handleSelectProduct(p)}>
         <div className="thumb">
           <span className="mark wm">
             <svg width="88" height="88" viewBox="0 0 64 64" fill="none" aria-hidden="true" style={{ opacity: 0.07 }}>
@@ -810,7 +988,7 @@ export default function Home() {
   };
 
   const renderCatalogContent = () => {
-    const isFilterActive = search || activeType || activeBadge || activeUf;
+    const isFilterActive = search || activeType || activeBadge || activeUf || activeMarca;
 
     if (isFilterActive) {
       return (
@@ -973,34 +1151,36 @@ export default function Home() {
         </aside>
 
         <main className="main">
-          <section className="hero">
-            <div className="hero-in">
-              <span className="kicker">Portfólio de produtos · OPME & tecnologias cirúrgicas</span>
-              <h1>Tecnologia e <b>confiança</b> em material médico.</h1>
-              <p>Um portfólio completo, organizado e tecnicamente superior — do trauma à reconstrução bucomaxilar — com curadoria de fabricantes globais e suporte técnico especializado para o centro cirúrgico.</p>
-              <div className="cta-row">
-                <button className="btn btn-light" onClick={() => document.getElementById('catalog').scrollIntoView({behavior:'smooth'})}>Explorar portfólio</button>
-                <a className="btn btn-ghost" href="https://wa.me/5581989236136" target="_blank" rel="noopener noreferrer">Falar com a Arthromed</a>
+          {activeSpec === "" && !search && !activeType && !activeMarca && !activeBadge && !activeUf && (
+            <section className="hero">
+              <div className="hero-in">
+                <span className="kicker">Portfólio de produtos · OPME & tecnologias cirúrgicas</span>
+                <h1>Tecnologia e <b>confiança</b> em material médico.</h1>
+                <p>Um portfólio completo, organizado e tecnicamente superior — do trauma à reconstrução bucomaxilar — com curadoria de fabricantes globais e suporte técnico especializado para o centro cirúrgico.</p>
+                <div className="cta-row">
+                  <button className="btn btn-light" onClick={() => document.getElementById('catalog').scrollIntoView({behavior:'smooth'})}>Explorar portfólio</button>
+                  <a className="btn btn-ghost" href="https://wa.me/5581989236136" target="_blank" rel="noopener noreferrer">Falar com a Arthromed</a>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
-          {/* Seção Stats */}
+          {/* Seção Stats Dinâmica */}
           <section className="stats" id="statsBand">
             <div className="stat">
-              <div className="n">{SPECS.length}</div>
+              <div className="n">{dynamicSpecsCount}</div>
               <div className="l">Especialidades</div>
             </div>
             <div className="stat">
-              <div className="n">{products.length}</div>
+              <div className="n">{dynamicProductsCount}</div>
               <div className="l">Produtos & soluções</div>
             </div>
             <div className="stat">
-              <div className="n">{new Set(products.map(p => p.m).filter(m => m && m !== '—')).size}+</div>
+              <div className="n">{dynamicBrandsCount}{dynamicBrandsCount > 20 ? '+' : ''}</div>
               <div className="l">Fabricantes globais</div>
             </div>
             <div className="stat">
-              <div className="n">3</div>
+              <div className="n">{dynamicStatesCount}</div>
               <div className="l">Estados atendidos</div>
             </div>
           </section>
@@ -1011,13 +1191,13 @@ export default function Home() {
         </main>
       </div>
 
-      {(railOpen || selectedProduct) && <div className="scrim show" onClick={() => {setRailOpen(false); setSelectedProduct(null)}}></div>}
+      {(railOpen || selectedProduct) && <div className="scrim show" onClick={() => {setRailOpen(false); handleSelectProduct(null)}}></div>}
 
       {/* DRAWER DA FICHA DE PRODUTO COMPLETA */}
       <aside className={`drawer ${selectedProduct ? 'show' : ''}`} id="pfDrawer">
         <div className="dhead">
           <strong style={{fontSize:'13px',letterSpacing:'.04em',color:'var(--ink-2)',textTransform:'uppercase',fontWeight:800}}>Ficha técnica</strong>
-          <button className="x" aria-label="Fechar" onClick={() => setSelectedProduct(null)}>
+          <button className="x" aria-label="Fechar" onClick={() => handleSelectProduct(null)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
@@ -1185,6 +1365,13 @@ export default function Home() {
                     </a>
                   </div>
                 )}
+                {selectedProduct.modelo_pedido_url && (userRole === 'admin' || userRole === 'vendedor') && (
+                  <div style={{ marginTop: selectedProduct.tecnica_url ? '12px' : '30px' }}>
+                    <a href={selectedProduct.modelo_pedido_url} target="_blank" rel="noopener noreferrer" download className="btn btn-grad" style={{ width: '100%', justifyContent: 'center', background: '#0284c7' }}>
+                      <span dangerouslySetInnerHTML={{ __html: ICN.doc }}></span> Baixar Modelo de Pedido (.docx)
+                    </a>
+                  </div>
+                )}
               </div>
 
               <div className="pf-actions">
@@ -1291,6 +1478,11 @@ export default function Home() {
                 <input type="file" accept="application/pdf" onChange={handlePdfChange} style={{ width: '100%', padding: '10px', border: '1px dashed var(--azul)', borderRadius: '8px' }} />
               </div>
 
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Modelo de Pedido (DOCX – Opcional)</label>
+                <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleDocxChange} style={{ width: '100%', padding: '10px', border: '1px dashed var(--azul)', borderRadius: '8px' }} />
+              </div>
+
               <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: 'var(--grad)', color: '#fff', borderRadius: '8px', fontWeight: 800, border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
                 {loading ? 'Salvando...' : 'Adicionar ao Portfólio'}
               </button>
@@ -1383,9 +1575,41 @@ export default function Home() {
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Nova Técnica Cirúrgica (PDF - Opcional. Deixe em branco para manter a atual)</label>
                 <input type="file" accept="application/pdf" onChange={handlePdfChange} style={{ width: '100%', padding: '10px', border: '1px dashed var(--azul)', borderRadius: '8px' }} />
-                {editingProduct.tecnica_url && (
-                  <div style={{ marginTop: '8px', fontSize: '12px' }}>
-                    Arquivo atual: <a href={editingProduct.tecnica_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--azul)', textDecoration: 'underline' }}>Baixar PDF</a>
+                {editingProduct.tecnica_url && !formData.removePdf && (
+                  <div style={{ marginTop: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span>Arquivo atual: <a href={editingProduct.tecnica_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--azul)', textDecoration: 'underline' }}>Baixar PDF</a></span>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, removePdf: true }))} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                      Excluir PDF
+                    </button>
+                  </div>
+                )}
+                {formData.removePdf && (
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: '#dc2626', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span>(PDF atual será excluído ao salvar)</span>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, removePdf: false }))} style={{ background: '#f3f4f6', color: '#374151', border: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                      Desfazer
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>Novo Modelo de Pedido (DOCX - Opcional. Deixe em branco para manter o atual)</label>
+                <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleDocxChange} style={{ width: '100%', padding: '10px', border: '1px dashed var(--azul)', borderRadius: '8px' }} />
+                {editingProduct.modelo_pedido_url && !formData.removeDocx && (
+                  <div style={{ marginTop: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span>Arquivo atual: <a href={editingProduct.modelo_pedido_url} target="_blank" rel="noopener noreferrer" download style={{ color: 'var(--azul)', textDecoration: 'underline' }}>Baixar DOCX</a></span>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, removeDocx: true }))} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                      Excluir DOCX
+                    </button>
+                  </div>
+                )}
+                {formData.removeDocx && (
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: '#dc2626', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span>(DOCX atual será excluído ao salvar)</span>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, removeDocx: false }))} style={{ background: '#f3f4f6', color: '#374151', border: 'none', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                      Desfazer
+                    </button>
                   </div>
                 )}
               </div>
