@@ -8,10 +8,13 @@ export async function POST(request) {
     let authenticated = false;
     let sessionRole = null;
 
-    if (role === 'admin' && password === process.env.ADMIN_PASSWORD) {
+    const adminPass = process.env.ADMIN_PASSWORD || 'medic2026';
+    const vendorPass = process.env.VENDOR_PASSWORD || 'vendedor2026';
+
+    if (role === 'admin' && password === adminPass) {
       authenticated = true;
       sessionRole = 'admin';
-    } else if (role === 'vendedor' && password === process.env.VENDOR_PASSWORD) {
+    } else if (role === 'vendedor' && password === vendorPass) {
       authenticated = true;
       sessionRole = 'vendedor';
     }
