@@ -3,6 +3,6 @@ import { NextResponse } from 'next/server';
 
 export async function POST() {
   const cookieStore = await cookies();
-  cookieStore.delete('arthromed_session');
+  cookieStore.delete('medic_session');
   return NextResponse.json({ success: true });
 }

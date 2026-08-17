@@ -196,13 +196,13 @@ export default function AdminPage() {
     const doc = new jsPDF();
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
-    doc.text("Arthromed - Catálogo de Produtos", 20, 20);
+    doc.text("Medic - Catálogo de Produtos", 20, 20);
     
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     doc.text("Este é um PDF gerado automaticamente contendo os produtos recentes.", 20, 30);
     
-    doc.save("Arthromed_Catalogo.pdf");
+    doc.save("Medic_Catalogo.pdf");
   };
 
   const handleLogout = async () => {
@@ -280,7 +280,7 @@ export default function AdminPage() {
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'flex', alignItems: 'center', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--ink-2)' }}>
                 <input type="checkbox" checked={formData.exclusivo} onChange={e => setFormData({...formData, exclusivo: e.target.checked})} style={{ marginRight: '8px', width: '16px', height: '16px' }} />
-                Produto Exclusivo Arthromed
+                Produto Exclusivo Medic
               </label>
             </div>
 

@@ -629,8 +629,8 @@ export default function Home() {
   };
 
   const getResumoTexto = (p) => {
-    let t = '*' + p.n + '*  ·  ' + (p.m !== '—' ? p.m : 'Curadoria Arthromed') + '\n';
-    if (p.b && p.b.includes('exclusivo')) t += '★ Exclusividade Arthromed\n';
+    let t = '*' + p.n + '*  ·  ' + (p.m !== '—' ? p.m : 'Curadoria Medic') + '\n';
+    if (p.b && p.b.includes('exclusivo')) t += '★ Exclusividade Medic\n';
     t += p.tag + '\n';
     t += 'Especialidade: ' + (getSpec(p.e)?.nome || '') + '  |  Categoria: ' + p.t + '\n';
     if (p.mat) t += 'Material: ' + p.mat + '\n';
@@ -646,7 +646,7 @@ export default function Home() {
     if (p.cod) t += '\nCódigos:\n' + p.cod.map(c => '• ' + c[0] + ' — ' + c[1]).join('\n') + '\n';
     
     if (p.como) t += '\nComo solicitar:\n' + p.como + '\n';
-    t += '\nArthromed Material Médico · (81) 98923-6136';
+    t += '\nMedic Material Médico · (81) 98923-6136';
     return t;
   };
 
@@ -886,7 +886,7 @@ export default function Home() {
     doc.line(15, curY, 195, curY);
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
-    doc.text("Arthromed Material Médico  ·  Central Comercial (81) 98923-6136", 15, curY + 5);
+    doc.text("Medic Material Médico  ·  Central Comercial (81) 98923-6136", 15, curY + 5);
 
     doc.save(`Ficha_Tecnica_${p.n.replace(/\s+/g, '_')}.pdf`);
   };
@@ -940,7 +940,7 @@ export default function Home() {
           )}
 
           <div className="foot">
-            <span className="brand-l">{p.m !== '—' ? p.m : 'Curadoria Arthromed'}</span>
+            <span className="brand-l">{p.m !== '—' ? p.m : 'Curadoria Medic'}</span>
             <span className="add" dangerouslySetInnerHTML={{ __html: `Ver ficha ${ICN.arrow}` }}></span>
           </div>
         </div>
@@ -1040,19 +1040,8 @@ export default function Home() {
           <button className="menu-toggle" aria-label="Abrir menu de especialidades" onClick={() => setRailOpen(true)}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
           </button>
-          <a className="brand" href="#top" aria-label="Arthromed — início">
-            <span className="mark" id="logoMark">
-              <svg width="34" height="34" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                <defs><linearGradient id="agBrand" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse"><stop stopColor="#1f29de"/><stop offset=".55" stopColor="#0e8fb8"/><stop offset="1" stopColor="#06df82"/></linearGradient></defs>
-                <path d="M30 8c2-2 6-1 7 2l16 40c1 3-1 6-4 6-2 0-4-1-5-3L34 24 24 49c-1 2-3 3-5 3-3 0-5-3-4-6L30 8Z" fill="url(#agBrand)"/>
-                <path d="M22 33c1-3 5-4 8-2 2 2 3 5 1 8-2 4-7 5-11 4-3-1-4-4-2-7l4-3Z" fill="url(#agBrand)"/>
-                <path d="M36 36c4-2 9-1 11 3 1 3-1 6-5 7-5 1-11-1-13-5-1-3 1-5 3-5l4 0Z" fill="url(#agBrand)"/>
-              </svg>
-            </span>
-            <span>
-              <span className="name">Arthromed</span>
-              <span className="sub">Material Médico</span>
-            </span>
+          <a className="brand" href="#top" aria-label="Medic — início">
+            <img src="/logo-medic.png" alt="Medic Material Médico" className="brand-logo-img" />
           </a>
           <div className="search">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -1159,7 +1148,7 @@ export default function Home() {
                 <p>Um portfólio completo, organizado e tecnicamente superior — do trauma à reconstrução bucomaxilar — com curadoria de fabricantes globais e suporte técnico especializado para o centro cirúrgico.</p>
                 <div className="cta-row">
                   <button className="btn btn-light" onClick={() => document.getElementById('catalog').scrollIntoView({behavior:'smooth'})}>Explorar portfólio</button>
-                  <a className="btn btn-ghost" href="https://wa.me/5581989236136" target="_blank" rel="noopener noreferrer">Falar com a Arthromed</a>
+                  <a className="btn btn-ghost" href="https://wa.me/5581989236136" target="_blank" rel="noopener noreferrer">Falar com a Medic</a>
                 </div>
               </div>
             </section>
@@ -1240,7 +1229,7 @@ export default function Home() {
                 <div className="pf-id">
                   <div className="cell">
                     <div className="k">Fabricante</div>
-                    <div className="v">{selectedProduct.m !== '—' ? selectedProduct.m : 'Curadoria Arthromed'}</div>
+                    <div className="v">{selectedProduct.m !== '—' ? selectedProduct.m : 'Curadoria Medic'}</div>
                   </div>
                   <div className="cell">
                     <div className="k">Categoria</div>
@@ -1453,7 +1442,7 @@ export default function Home() {
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--ink-2)' }}>
                   <input type="checkbox" checked={formData.exclusivo} onChange={e => setFormData({...formData, exclusivo: e.target.checked})} style={{ marginRight: '8px', width: '16px', height: '16px' }} />
-                  Produto Exclusivo Arthromed
+                  Produto Exclusivo Medic
                 </label>
               </div>
 
@@ -1552,7 +1541,7 @@ export default function Home() {
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: 'var(--ink-2)' }}>
                   <input type="checkbox" checked={formData.exclusivo} onChange={e => setFormData({...formData, exclusivo: e.target.checked})} style={{ marginRight: '8px', width: '16px', height: '16px' }} />
-                  Produto Exclusivo Arthromed
+                  Produto Exclusivo Medic
                 </label>
               </div>
 

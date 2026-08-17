@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  const session = request.cookies.get('arthromed_session');
+  const session = request.cookies.get('medic_session');
 
   // Se tentar acessar o admin sem estar logado ou se for apenas vendedor, redireciona pro login
   if (request.nextUrl.pathname.startsWith('/admin')) {

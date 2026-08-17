@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   const cookieStore = await cookies();
-  const session = cookieStore.get('arthromed_session');
+  const session = cookieStore.get('medic_session');
 
   if (session && (session.value === 'admin' || session.value === 'vendedor')) {
     return NextResponse.json({ role: session.value });
