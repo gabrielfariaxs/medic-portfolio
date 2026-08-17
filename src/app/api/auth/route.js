@@ -20,7 +20,7 @@ export async function POST(request) {
       // Set an HTTP-only cookie for the session
       const cookieStore = await cookies();
       cookieStore.set({
-        name: 'arthromed_session',
+        name: 'medic_session',
         value: sessionRole,
         httpOnly: true,
         path: '/',

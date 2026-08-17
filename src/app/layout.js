@@ -13,8 +13,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata = {
-  title: "Catálogo Online · Arthromed",
-  description: "Portfólio de Produtos e Especialidades Arthromed",
+  title: "Catálogo Online · Medic",
+  description: "Portfólio de Produtos e Especialidades Medic",
 };
 
 export default function RootLayout({ children }) {

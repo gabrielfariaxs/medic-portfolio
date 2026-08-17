@@ -4,40 +4,49 @@
    Azul Médico #1f29de · Verde Evolução #06df82 · Grafite #2b2d32
    ============================================================ */
 :root{
-  /* Marca */
-  --azul:#1f29de;          /* Azul Médico */
-  --verde:#06df82;         /* Verde Evolução */
-  --grafite:#2b2d32;       /* Cinza Grafite */
-  --grad:linear-gradient(135deg,var(--azul) 0%,#0e8fb8 55%,var(--verde) 100%);
-  --grad-soft:linear-gradient(135deg,#eef0ff 0%,#e6f8f1 100%);
+  /* Cores Principais - Hierarquia de Saúde / Clínica (Azul e Verde em maior proporção) */
+  --azul:#0284c7;          /* Azul Clínico Principal */
+  --azul-dark:#0369a1;     /* Azul Oceano Profundo */
+  --verde:#10b981;         /* Verde Saúde / Esmeralda */
+  --verde-dark:#059669;    /* Verde Menta Clínico */
+  --grafite:#1e293b;       /* Grafite / Slate */
+
+  /* Cores de Acento (Badges, Ícones, Gráficos, Destaques) */
+  --rosa:#ec4899;          /* Rosa Acento - Lançamentos & Alertas */
+  --amarelo:#f59e0b;       /* Amarelo Acento - Mais Vendidos & Destaques */
+  --roxo:#8b5cf6;          /* Roxo Acento - Exclusivos & Recursos Especiais */
+
+  /* Gradientes de Saúde / Clínica */
+  --grad:linear-gradient(135deg, var(--azul) 0%, #0891b2 45%, var(--verde-dark) 80%, var(--verde) 100%);
+  --grad-soft:linear-gradient(135deg, #e0f2fe 0%, #ecfdf5 55%, #d1fae5 100%);
 
   /* Superfícies (tema claro — único aprovado) */
-  --bg:#f5f7fb;
+  --bg:#f8fafc;
   --surface:#ffffff;
-  --surface-2:#fafbfe;
-  --line:#e6e9f2;
-  --line-soft:#eef1f8;
+  --surface-2:#f1f5f9;
+  --line:#e2e8f0;
+  --line-soft:#f1f5f9;
 
   /* Texto */
-  --ink:#14161f;
-  --ink-2:#5b6276;
-  --ink-3:#9097aa;
+  --ink:#0f172a;
+  --ink-2:#475569;
+  --ink-3:#94a3b8;
 
-  /* Acentos por especialidade (rampa azul→verde da marca + grafite) */
-  --c-trauma:#1f29de;
-  --c-bio:#3346d6;
-  --c-artro:#1f6fc4;
-  --c-dor:#0e8fb8;
-  --c-esporte:#0bae93;
-  --c-pediatria:#0bc47e;
-  --c-geral:#06c46f;
-  --c-buco:#2b2d32;
-  --c-coluna:#1d52c9;
+  /* Acentos por especialidade */
+  --c-trauma:#0284c7;      /* Azul Clínico */
+  --c-bio:#10b981;         /* Verde Saúde */
+  --c-artro:#0369a1;       /* Azul Oceano */
+  --c-dor:#ec4899;         /* Rosa Acento */
+  --c-esporte:#8b5cf6;     /* Roxo Acento */
+  --c-pediatria:#059669;   /* Verde Menta */
+  --c-geral:#f59e0b;       /* Amarelo Acento */
+  --c-buco:#7c3aed;        /* Roxo Violeta */
+  --c-coluna:#0284c7;      /* Azul Clínico */
 
   --radius:16px;
   --radius-sm:11px;
-  --shadow:0 4px 22px rgba(20,22,31,.06);
-  --shadow-lg:0 24px 60px rgba(20,22,31,.16);
+  --shadow:0 4px 22px rgba(15,23,42,.06);
+  --shadow-lg:0 24px 60px rgba(15,23,42,.14);
   --ease:cubic-bezier(.2,.7,.2,1);
   --pad:clamp(20px,4vw,40px);
 }
@@ -70,6 +79,7 @@ header{
 }
 .bar{display:flex;align-items:center;gap:18px;padding:13px var(--pad);max-width:1480px;margin:0 auto}
 .brand{display:flex;align-items:center;gap:11px}
+.brand-logo-img{height:42px;width:auto;object-fit:contain;max-width:220px}
 .brand .name{font-weight:800;font-size:21px;letter-spacing:-.02em;line-height:1}
 .brand .sub{font-size:9.5px;font-weight:700;letter-spacing:.32em;color:var(--ink-3);text-transform:uppercase;margin-top:3px}
 .search{flex:1;max-width:520px;margin-left:auto;position:relative}
@@ -87,8 +97,8 @@ header{
 .btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;font-weight:700;font-size:13.5px;
   padding:10px 18px;transition:transform .15s var(--ease),box-shadow .2s,background .2s;white-space:nowrap}
 .btn:active{transform:translateY(1px)}
-.btn-grad{background:var(--grad);color:#fff;box-shadow:0 6px 18px rgba(31,41,222,.28)}
-.btn-grad:hover{box-shadow:0 10px 26px rgba(31,41,222,.34)}
+.btn-grad{background:var(--grad);color:#fff;box-shadow:0 6px 18px rgba(2,132,199,.28)}
+.btn-grad:hover{box-shadow:0 10px 26px rgba(2,132,199,.36)}
 .btn-ghost{border:1.5px solid var(--line);color:var(--ink);background:#fff}
 .btn-ghost:hover{border-color:var(--azul);color:var(--azul)}
 .btn .badge{background:#fff;color:var(--azul);border-radius:999px;font-size:11px;font-weight:800;min-width:19px;height:19px;
@@ -179,10 +189,10 @@ header{
   text-transform:uppercase;background:rgba(255,255,255,.9);color:var(--ink-2);padding:4px 9px;border-radius:7px;backdrop-filter:blur(4px)}
 .card .thumb .badges{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 .pill{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:4px 9px;border-radius:999px;color:#fff;white-space:nowrap}
-.pill.novo{background:var(--azul)}
-.pill.top{background:var(--grafite)}
-.pill.premium{background:linear-gradient(135deg,#b88a2e,#e6c463);color:#3a2c08}
-.pill.excl{background:var(--azul);color:#fff;display:inline-flex;align-items:center;gap:4px;box-shadow:0 4px 12px rgba(31,41,222,.28)}
+.pill.novo{background:var(--rosa);box-shadow:0 4px 12px rgba(236,72,153,.28)}
+.pill.top{background:var(--amarelo);color:#451a03;box-shadow:0 4px 12px rgba(245,158,11,.28)}
+.pill.premium{background:linear-gradient(135deg,var(--amarelo),#d97706);color:#fff}
+.pill.excl{background:linear-gradient(135deg,var(--roxo),#7c3aed);color:#fff;display:inline-flex;align-items:center;gap:4px;box-shadow:0 4px 12px rgba(139,92,246,.28)}
 .pill.excl svg{margin-top:-1px}
 .card .cbody{padding:15px 16px 16px;display:flex;flex-direction:column;flex:1;gap:8px}
 .uf-row{display:flex;flex-wrap:wrap;gap:4px}

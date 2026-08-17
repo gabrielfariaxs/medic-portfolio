@@ -39,7 +39,10 @@ export default function Login() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
       <form onSubmit={handleLogin} style={{ background: 'var(--surface)', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 22px rgba(20,22,31,.06)', width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '20px', textAlign: 'center' }}>Área Restrita</h2>
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <img src="/logo-medic.png" alt="Medic Material Médico" style={{ height: '48px', width: 'auto', margin: '0 auto', display: 'block' }} />
+        </div>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px', textAlign: 'center' }}>Área Restrita</h2>
         
         {error && (
           <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px', fontWeight: 600 }}>
